@@ -81,7 +81,7 @@ def get_data_loaders(train_img_dir, train_mask_dir, test_img_dir, test_mask_dir,
     test_dataset = isic_data_loader(test_img_dir, test_mask_dir, test_transform, mask_transform=mask_transform)
 
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True, pin_memory=True, persistent_workers=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True, pin_memory=True, persistent_workers=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True, pin_memory=True, persistent_workers=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=True, pin_memory=True, persistent_workers=True)
 
     return train_loader, test_loader
