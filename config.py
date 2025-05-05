@@ -4,9 +4,10 @@ cfg = EasyDict()
 
 # General training settings
 cfg.batch_size = 16
-cfg.num_epochs = 5
+cfg.num_epochs = 10
 cfg.learning_rate = 0.01
 cfg.img_size = 256
+cfg.accumulation_steps = 4  # Gradient accumulation steps
 
 # UNet configuration
 cfg.unet = EasyDict()
@@ -19,9 +20,9 @@ cfg.transunet = EasyDict()
 cfg.transunet.img_dim = 256  # Input image size
 cfg.transunet.in_channels = 3  # Input image channels
 cfg.transunet.out_channels = 128  # Base feature channels
-cfg.transunet.head_num = 4  # Number of attention heads
+cfg.transunet.head_num = 8  # Number of attention heads
 cfg.transunet.mlp_dim = 512  # MLP dimension in transformer
-cfg.transunet.block_num = 8  # Number of transformer blocks
+cfg.transunet.block_num = 4  # Number of transformer blocks
 cfg.transunet.patch_dim = 16  # Patch size
 cfg.transunet.class_num = 1  # Number of output classes
 

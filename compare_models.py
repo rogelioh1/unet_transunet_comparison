@@ -53,9 +53,10 @@ def train_model(model_name, model, train_loader, test_loader, device, num_epochs
 
     # Define optimizer and loss function
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-6)
     criterion = nn.BCEWithLogitsLoss()  # Binary Cross-Entropy Loss
-    accumulation_steps = 2  # Gradient accumulation steps
+    accumulation_steps = cfg.accumulation_steps  # Gradient accumulation steps
     
     # Create save directories
     os.makedirs(f'./results/{model_name}', exist_ok=True)
@@ -85,6 +86,8 @@ def train_model(model_name, model, train_loader, test_loader, device, num_epochs
         # Training phase
         model.train()
         train_loss = 0.0
+
+        optimizer.zero_grad()
         
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Training")
 
@@ -94,17 +97,23 @@ def train_model(model_name, model, train_loader, test_loader, device, num_epochs
                         
             timer.start()
             outputs = model(inputs)
+
             loss = criterion(outputs, masks) / accumulation_steps
             loss.backward()
 
-            if (batch_idx + 1) % accumulation_steps == 0:
+            # Track the un-scaled loss for reporting
+            actual_loss = loss.detach().item() * accumulation_steps
+            train_loss += actual_loss * inputs.size(0)
+            
+            # Update on accumulation steps or at the end of an epoch
+            if (batch_idx + 1) % accumulation_steps == 0 or batch_idx == len(train_loader) - 1:
                 optimizer.step()
                 optimizer.zero_grad()
 
             timer.stop(batch_size=inputs.size(0))
             
-            train_loss += loss.detach().item() * inputs.size(0)
-            progress_bar.set_postfix(loss=loss.detach().item())
+            # Show the un-scaled loss in progress bar
+            progress_bar.set_postfix(loss=actual_loss)
 
         scheduler.step()
 
@@ -139,7 +148,7 @@ def train_model(model_name, model, train_loader, test_loader, device, num_epochs
                 batch_iou = iou_score(preds, masks)
                 batch_dice = dice_score(preds, masks)
                 
-                if i == 0 and (epoch % 2 == 0 or epoch == num_epochs - 1):
+                if i == 0:
                     # Calculate on at most 2 images to save resources
                     batch_boundary_f1 = 0
                     for j in range(min(2, preds.size(0))):
